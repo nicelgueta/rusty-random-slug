@@ -12,7 +12,7 @@ What it says on the tin - this generates random text slugs in Rust and prints to
 Example:
 
 ```bash
-./rusty-random-slug 3 5
+./rustyrs 3 5
 
 # Output:
 characterized-synonymous-syntax
