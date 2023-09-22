@@ -6,7 +6,7 @@ What it says on the tin - this generates random text slugs in Rust and prints to
 ## Usage
 
 ```bash
-./rusty-random-slug [length in words] [number of slugs]
+./rustyrs [length in words] [number of slugs]
 ```
 
 Example:
