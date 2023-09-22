@@ -23,8 +23,8 @@ visual-totalled-voltage
 ```
 
 ## Performance
-- 1m x 2 word slugs: ~8.190s
-- 1m x 5 word slugs: ~16.150s
+- 1m x 2 word slugs: ~4.995s
+- 1m x 5 word slugs: ~10.447s
 
 ## Building
 
