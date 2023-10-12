@@ -1,6 +1,6 @@
 
 use std::env;
-use serde::{Deserialize};
+use serde::Deserialize;
 use rand::seq::SliceRandom;
 use std::io;
 
