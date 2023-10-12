@@ -86,8 +86,8 @@ dependencies = [
 ]
 
 [[package]]
-name = "rusty-random-slug"
-version = "0.1.0"
+name = "rustyrs"
+version = "0.1.4"
 dependencies = [
  "rand",
  "serde",

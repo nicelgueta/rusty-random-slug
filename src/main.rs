@@ -2,6 +2,7 @@
 use std::env;
 use serde::{Deserialize};
 use rand::seq::SliceRandom;
+use std::io;
 
 #[derive(Deserialize)]
 struct WordFile {
@@ -14,13 +15,34 @@ static ADJ_FILE: &'static [u8] = include_bytes!("./data/adjs.json");
 
 fn main() { 
     let args: Vec<String> = env::args().collect();
-    let num_words: u32 = args[1].parse().unwrap();
+    let num_words: u32;
+    if args.len() > 1 {
+        num_words = args[1].parse().unwrap();
+
+    } else {
+        let mut num_words_str: String = String::new();
+        println!("Provide the length of sentence in words (min 2, max 5): ");
+        io::stdin().read_line(&mut num_words_str).expect(
+            "Expected a number input"
+        );
+        num_words = num_words_str.trim().parse().expect("Value should be a number");
+    };
     if num_words < 2 {
         println!("Cannot work with < 2 words!");
     } else if num_words > 5 {
         println!("Cannot work with > 5 words");
     } else {
-        let num_outputs: u32 = args[2].parse().unwrap();
+        let num_outputs: u32;
+        if args.len() > 2 {
+            num_outputs = args[2].parse().unwrap();
+        } else {
+            let mut num_output_str: String = String::new();
+            println!("Provide the number of slugs you wish to output: ");
+            io::stdin().read_line(&mut num_output_str).expect(
+                "Expected a number input"
+            );
+            num_outputs = num_output_str.trim().parse().expect("Value should be a number");
+        };
         let phrases: Vec<String> = create_phrases(num_words, num_outputs);
         for i in 0..phrases.len() {
             println!("{}", phrases[i]);
