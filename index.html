@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <title>RustyRS WASM Example</title>
+  </head>
+  <body>
+    <script type="module" >
+      import init, { random_slugs } from "./pkg/rustyrs.js";
+      init();
+      export const test = () => {
+        const slugs = random_slugs(2, 10);
+        const slugsElement = document.getElementById("slugs");
+        slugsElement.innerHTML = "";
+        slugs.forEach(slug => {
+          const li = document.createElement("li");
+          li.textContent = slug;
+          slugsElement.appendChild(li);
+        });
+      };
+      document.getElementById("test").addEventListener("click", test);
+    </script>
+    <button id="test">Get 10 slugs</button>
+    <ul id="slugs"></ul>
+  </body>
+</html>

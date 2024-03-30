@@ -1,11 +1,18 @@
 [package]
 name = "rustyrs"
-version = "0.1.5"
+version = "0.2.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[lib]
+name = "rustyrs"
+path = "src/lib.rs"
+crate-type = ["cdylib", "lib"]
+
 [dependencies]
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-rand = "0.8"
+rand = "0.8.5"
+serde = { version = "1.0.197", features = ["derive"] }
+serde_json = "1.0.115"
+wasm-bindgen = "0.2.92"
+getrandom = { version = "0.2", features = ["js"] }
