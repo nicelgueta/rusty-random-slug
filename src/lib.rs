@@ -1,19 +1,19 @@
-use wasm_bindgen::prelude::*;
-use serde::Deserialize;
 use rand::seq::SliceRandom;
 
-#[derive(Deserialize)]
-struct WordFile {
-    words: Vec<String>,
-}
+#[cfg(feature = "wasm")]
+use wasm_bindgen::prelude::*;
 
 // bundle the files into the executable
-static NOUN_FILE: &'static [u8] = include_bytes!("./data/nouns.json");
-static ADJ_FILE: &'static [u8] = include_bytes!("./data/adjs.json");
+static NOUN_FILE: &'static [u8] = include_bytes!("./data/nouns.txt");
+static ADJ_FILE: &'static [u8] = include_bytes!("./data/adjs.txt");
 
-
+#[cfg(feature = "wasm")]
 #[wasm_bindgen]
 pub fn random_slugs(num_words: u32, num_outputs: Option<u32>) -> Option<Vec<String>> { 
+    random_slugs_f(num_words, num_outputs)
+}
+
+pub fn random_slugs_f(num_words: u32, num_outputs: Option<u32>) -> Option<Vec<String>> { 
     let num_outputs_u = num_outputs.unwrap_or(1);
     if num_words < 1 {
         println!("Cannot work with < 1 word!");
@@ -29,9 +29,10 @@ pub fn random_slugs(num_words: u32, num_outputs: Option<u32>) -> Option<Vec<Stri
 
 fn get_words(word_file: &[u8]) -> Vec<String> {
     let contents: &str = std::str::from_utf8(word_file).unwrap();
-    let json: WordFile = serde_json::from_str(&contents)
-        .unwrap_or_else(|_| panic!("Cannot parse JSON file"));
-    json.words
+    let words = contents.split("\n").map(
+        |s|s.to_string()
+     ).collect();
+    words
 }
 
 fn create_phrases(num_words: u32, num_outputs: u32) -> Vec<String> {
@@ -85,18 +86,18 @@ fn create_phrase(adjs: &Vec<String>, nouns: &Vec<String>, num_words: u32) -> Str
 #[cfg(test)]
 mod tests {
 
-    use super::random_slugs;
+    use super::random_slugs_f;
 
     #[test]
     fn happy() {
         for i in 1..5 {
-            assert!(random_slugs(i, Some(1)).unwrap().len() > 0);
+            assert!(random_slugs_f(i, Some(1)).unwrap().len() > 0);
         }
     }
 
     #[test]
     fn unhappy_high() {
-        match random_slugs(6, Some(1)) {
+        match random_slugs_f(6, Some(1)) {
             Some(_v)   => assert!(false),
             None => assert!(true)
         }
@@ -104,7 +105,7 @@ mod tests {
 
     #[test]
     fn unhappy_low() {
-        match random_slugs(0,Some(1)) {
+        match random_slugs_f(0,Some(1)) {
             Some(_v)   => assert!(false),
             None => assert!(true)
         }

@@ -1,5 +1,5 @@
 use std::env;
-use rustyrs::random_slugs;
+use rustyrs::random_slugs_f;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -8,7 +8,7 @@ fn main() {
         3 => args[2].parse().unwrap(),
         _ => 1
     });
-    let phrases = random_slugs(num_words, num_outputs);
+    let phrases = random_slugs_f(num_words, num_outputs);
     if let Some(ps) = phrases {
         for p in ps {
             println!("{}", p)
