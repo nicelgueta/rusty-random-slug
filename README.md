@@ -15,7 +15,7 @@ cargo run --release [length in words] [number of slugs]
 
 ### WASM
 ```bash
-wasm-pack build --target web
+wasm-pack build --target web --features wasm
 ```
 
 In JS/TS:

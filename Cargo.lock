@@ -110,7 +110,7 @@ dependencies = [
 
 [[package]]
 name = "rustyrs"
-version = "0.2.3"
+version = "0.2.4"
 dependencies = [
  "getrandom",
  "rand",
