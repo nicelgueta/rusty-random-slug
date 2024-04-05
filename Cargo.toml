@@ -1,6 +1,6 @@
 [package]
 name = "rustyrs"
-version = "0.2.4"
+version = "0.3.2"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -10,10 +10,13 @@ name = "rustyrs"
 path = "src/lib.rs"
 crate-type = ["cdylib", "lib"]
 
+
 [features]
 wasm = ["wasm-bindgen", "getrandom"]
+python = ["pyo3"]
 
 [dependencies]
 rand = "0.8.5"
 wasm-bindgen = {version = "0.2.92", optional = true}
 getrandom = { version = "0.2", features = ["js"], optional = true }
+pyo3 = { version = "0.21.1", features = ["extension-module"], optional = true }
