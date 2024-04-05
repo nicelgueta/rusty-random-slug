@@ -1,17 +1,38 @@
 use rand::seq::SliceRandom;
 
+// External APIs
+
 #[cfg(feature = "wasm")]
 use wasm_bindgen::prelude::*;
 
-// bundle the files into the executable
-static NOUN_FILE: &'static [u8] = include_bytes!("./data/nouns.txt");
-static ADJ_FILE: &'static [u8] = include_bytes!("./data/adjs.txt");
+#[cfg(feature = "python")]
+use pyo3::prelude::*;
+
 
 #[cfg(feature = "wasm")]
 #[wasm_bindgen]
 pub fn random_slugs(num_words: u32, num_outputs: Option<u32>) -> Option<Vec<String>> { 
     random_slugs_f(num_words, num_outputs)
 }
+
+#[cfg(feature = "python")]
+#[pyfunction]
+fn generate_slugs(num_words: u32, num_outputs: Option<u32>) -> Option<Vec<String>> { 
+    random_slugs_f(num_words, num_outputs)
+}
+
+#[cfg(feature = "python")]
+#[pymodule]
+fn rustyrs(m: &Bound<'_, PyModule>) -> PyResult<()> {
+    m.add_function(wrap_pyfunction!(generate_slugs, m)?)?;
+    Ok(())
+}
+
+// 
+
+// bundle the files into the executable
+static NOUN_FILE: &'static [u8] = include_bytes!("./data/nouns.txt");
+static ADJ_FILE: &'static [u8] = include_bytes!("./data/adjs.txt");
 
 pub fn random_slugs_f(num_words: u32, num_outputs: Option<u32>) -> Option<Vec<String>> { 
     let num_outputs_u = num_outputs.unwrap_or(1);
