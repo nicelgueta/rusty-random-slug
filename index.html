@@ -9,7 +9,17 @@
       import init, { random_slugs } from "./pkg/rustyrs.js";
       init();
       export const test = () => {
-        const slugs = random_slugs(2, 10);
+        const word_length = document.getElementById("word_len_inp").value;
+        const slugs = random_slugs(word_length, 10);
+
+        // const word_combos = combinations(word_length);
+
+        // const wl = document.getElementById("wl");
+        // wl.textContent = word_length;
+
+        // const wlr = document.getElementById("wlr");
+        // wlr.textContent = word_combos;
+
         const slugsElement = document.getElementById("slugs");
         slugsElement.innerHTML = "";
         slugs.forEach(slug => {
@@ -20,6 +30,9 @@
       };
       document.getElementById("test").addEventListener("click", test);
     </script>
+    <p>Enter length of slug in words (min 1, max 5)</p>
+    <input type="number" id="word_len_inp" max="5" min="1" />
+    <!-- <p>Possible combinations with <span id="wl"></span> word(s): <span id="wlr"></span></p> -->
     <button id="test">Get 10 slugs</button>
     <ul id="slugs"></ul>
   </body>

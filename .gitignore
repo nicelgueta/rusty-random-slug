@@ -1,5 +1,9 @@
 /target
 venv/
+.venv/
 __pycache__/
 .pytest_cache/
 .mypy_cache/
+.pypirc
+.vscode
+*.ipynb
