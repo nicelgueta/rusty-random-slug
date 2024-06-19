@@ -96,7 +96,7 @@ Other features:
 - `combinations(word_length: int) -> int`: Get the number of possible combinations for a given word length
     ```python
     from rustyrs import combinations
-    print(combinations(3)) # 556,284
+    print(combinations(2)) # 556,284
     ```
 
 ## Performance
