@@ -14,6 +14,9 @@ on:
     paths:
       - src/*
       - rustyrs.pyi
+      - Cargo.toml
+      - Cargo.lock
+      - .github/workflows/*
 
 permissions:
   contents: read
@@ -45,7 +48,7 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
-          args: --release --out dist --find-interpreter
+          args: --release --out dist --find-interpreter --features python
           sccache: 'true'
           manylinux: auto
       - name: Upload wheels
@@ -76,7 +79,7 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
-          args: --release --out dist --find-interpreter
+          args: --release --out dist --find-interpreter --features python
           sccache: 'true'
           manylinux: musllinux_1_2
       - name: Upload wheels
@@ -104,7 +107,7 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
-          args: --release --out dist --find-interpreter
+          args: --release --out dist --find-interpreter --features python
           sccache: 'true'
       - name: Upload wheels
         uses: actions/upload-artifact@v4
@@ -130,7 +133,7 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
-          args: --release --out dist --find-interpreter
+          args: --release --out dist --find-interpreter --features python
           sccache: 'true'
       - name: Upload wheels
         uses: actions/upload-artifact@v4

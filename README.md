@@ -14,7 +14,7 @@ I needed a way to generate random slugs for a web project so thought it was a go
 ### Key features
 - No dependencies
 - Fast
-- Customizable slug length in words
+- Customisable slug length in words
 - Over half a million unique combinations for 2-word slugs ranging up to over **280 trillion** unique combinations for 5-word slugs
 
 ## Usage

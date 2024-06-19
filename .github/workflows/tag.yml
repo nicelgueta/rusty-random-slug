@@ -4,6 +4,10 @@ on:
   push:
     branches:
       - "main"
+    paths:
+      - Cargo.toml
+      - src/*
+      - Cargo.lock
 
 jobs:
   create-tag:

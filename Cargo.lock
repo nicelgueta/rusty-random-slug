@@ -254,7 +254,7 @@ dependencies = [
 
 [[package]]
 name = "rustyrs"
-version = "0.4.1"
+version = "0.4.2"
 dependencies = [
  "getrandom",
  "pyo3",
