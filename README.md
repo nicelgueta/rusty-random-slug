@@ -11,6 +11,12 @@ Usable as a standalone binary, web applications as a WebAssembly module (WASM), 
 ## Why?
 I needed a way to generate random slugs for a web project so thought it was a good opporunity to try out Rust's WebAssembly capabilities while also being able to use the same code as a zero-dependency python module for other projects.
 
+### Key features
+- No dependencies
+- Fast
+- Customizable slug length in words
+- Over half a million unique combinations for 2-word slugs ranging up to over **280 trillion** unique combinations for 5-word slugs
+
 ## Usage
 
 ### As a Rust binary
@@ -33,7 +39,6 @@ answerable-quick-whale
 floral-apportioned-bobcat
 ```
 ____________
-
 
 ### As a WASM module
 ```bash
@@ -74,18 +79,29 @@ maturin develop --features python
 
 Then from Python:
 ```python
-from rustyrs import generate_slugs
-slugs: list[str] = generate_slugs(3, 5)
+from rustyrs import random_slugs
+slugs: list[str] = random_slugs(3, 5)
 
 # slugs: ['reflecting-unsealed-mamba', 'disabling-addicting-asp', 'pliable-begotten-barnacle', 'vaulting-telepathic-caracal', 'canonical-graven-beetle']
 ```
 
+Other features:
+- `get_slug(word_length: int) -> str`: Generate a single slug of a specific length
+- `SlugGenerator(word_length: int)`: Create a generator object to generate slugs of a specific length. Can generate slugs infinitely.
+    ```python
+    from rustyrs import SlugGenerator
+    gen = SlugGenerator(3)
+    print(next(gen)) # 'unwieldy-unsuspecting-ant'
+    ```
+- `combinations(word_length: int) -> int`: Get the number of possible combinations for a given word length
+    ```python
+    from rustyrs import combinations
+    print(combinations(3)) # 556,284
+    ```
+
 ## Performance
 - 1m x 2 word slugs: ~4.995s
 - 1m x 5 word slugs: ~10.447s
-
-## Word Data
-> Sourced from [Corpora](https://github.com/dariusk/corpora/blob/master/data/words) by [Darius Kazemi](https://github.com/dariusk)
 
 ## License
 MIT
