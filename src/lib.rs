@@ -46,7 +46,7 @@ mod python {
     impl SlugGenerator {
         #[new]
         fn new(word_length: i32) -> PyResult<Self> {
-            if word_length < 1 && word_length > 5 {
+            if word_length < 1 || word_length > 5 {
                 Err(PyValueError::new_err(
                     "word_length must be between 1 and 5"
                 ))
