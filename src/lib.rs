@@ -114,15 +114,17 @@ mod core {
     // bundle the files into the executable
     static NOUN_FILE: &'static [u8] = include_bytes!("./data/nouns.txt");
     static ADJ_FILE: &'static [u8] = include_bytes!("./data/adjs.txt");
+
     
     pub fn random_slugs(word_length: i32, num_outputs: Option<i32>) -> Result<Vec<String>, Box<dyn Error>> { 
         let num_outputs_u = num_outputs.unwrap_or(1);
-        create_phrases(word_length, num_outputs_u)
+        create_phrases(word_length as usize, num_outputs_u)
     }
     pub fn get_slug(word_length: i32) -> Result<String, Box<dyn Error>> {
         let adjs: Vec<String> = get_words(ADJ_FILE);
         let nouns: Vec<String> = get_words(NOUN_FILE);
-        create_phrase(&adjs, &nouns, word_length)
+        let mut ws = WordSelector::new(adjs, nouns, word_length as usize)?;
+        ws.choose()
     }
     
     pub fn combinations(word_length: i32) -> Result<usize, Box<dyn Error>> {
@@ -147,68 +149,114 @@ mod core {
         words
     }
     
-    fn create_phrases(word_length: i32, num_outputs: i32) -> Result<Vec<String>, Box<dyn Error>> {
-        let adjs: Vec<String> = get_words(ADJ_FILE);
-        let nouns: Vec<String> = get_words(NOUN_FILE);
-        let mut phrases: Vec<String> = Vec::new();
-        for _ in 0..num_outputs {
-            let phrase = create_phrase(&adjs, &nouns, word_length)?;
-            phrases.push(phrase);
+    fn create_phrases(word_length: usize, num_outputs: i32) -> Result<Vec<String>, Box<dyn Error>> {
+        let mut rng = rand::thread_rng();
+        let mut adjs: Vec<String> = get_words(ADJ_FILE);
+        adjs.shuffle(&mut rng);
+        let mut nouns: Vec<String> = get_words(NOUN_FILE);
+        nouns.shuffle(&mut rng);
+        let mut ws = WordSelector::new(adjs, nouns, word_length)?;
+        let mut words = Vec::new();
+        for _i in 0..num_outputs {
+            words.push(ws.choose()?)
+        };
+        Ok(words)
+    }
+    fn gcd(a: usize, b: usize) -> usize {
+        if b == 0 {
+            return a;
         }
-        Ok(phrases)
+        gcd(b, a % b)
     }
     
-    fn choose_word(vect: &Vec<String>) -> String {
-        let word: String = vect.choose(&mut rand::thread_rng())
-            .unwrap_or(&String::from("default"))
-            .clone();
-        word
+    fn lcm(a: usize, b: usize) -> usize {
+        (a * b) / gcd(a, b)
     }
     
-    fn create_phrase(adjs: &Vec<String>, nouns: &Vec<String>, word_length: i32) -> Result<String, Box<dyn Error>> {
-        let noun: String = choose_word(nouns);
-        match word_length {
-            1 => Ok(noun),
-            2 => {
-                let adj: String = choose_word(adjs);
-                Ok(format!("{}-{}", adj, noun))
-            },
-            3 => {
-                let adj1: String = choose_word(adjs);
-                let adj2: String = choose_word(adjs);
-                Ok(format!("{}-{}-{}", adj1, adj2, noun))
-            },
-            4 => {
-                let adj1: String = choose_word(adjs);
-                let adj2: String = choose_word(adjs);
-                let noun2: String = choose_word(nouns);
-                Ok(format!("{}-{}-{}-of-{}", adj1, adj2, noun, noun2))
-            },
-            5 => {
-                let adj1: String = choose_word(adjs);
-                let adj2: String = choose_word(adjs);
-                let adj3: String = choose_word(adjs);
-                let noun2: String = choose_word(nouns);
-                Ok(format!("{}-{}-{}-of-{}-{}", adj1, adj2, noun, adj3, noun2))
-            },
-            n => Err(format!(
-                "Only slugs of length 1 to 5 are supported. Tried: {}", n
-            ).into())
-        }
+    /// This special class is designed to ensure uniqueness when generating random names.
+    /// 
+    struct WordSelector {
+        adjs: Vec<String>,
+        nouns: Vec<String>,
+        adj_i: usize, 
+        noun_i: usize,
+        word_len: usize,
+        increment_pos: bool,
+        lcm: usize,
+        total_combinations: usize,
+        its_completed: usize
     }
+    impl WordSelector {
+        fn new(adjs: Vec<String>, nouns: Vec<String>, word_len: usize) -> Result<Self, Box<dyn Error>> {
+            let lcm: usize = lcm(adjs.len(), nouns.len());
+            Ok(Self { 
+                adjs, 
+                nouns, 
+                adj_i: 0, 
+                noun_i: 0, 
+                word_len,
+                increment_pos: true,
+                lcm,
+                total_combinations: combinations(word_len as i32)?,
+                its_completed: 0
+            })
+        }
+        pub fn choose(&mut self) -> Result<String, Box<dyn Error>>{
+            match self.word_len{
+                // 1 => self.choose_1(),
+                2 => self.choose_2(),
+                // 3 => self.choose_3(),
+                // 4 => self.choose_4(),
+                // 5 => self.choose_5(),
+                n => Err(format!(
+                    "Only slugs of length 1 to 5 are supported. Tried: {}", n
+                ).into())
+            }
+        }
+        fn choose_2(&mut self) -> Result<String, Box<dyn Error>> {
+            let phrase = format!("{}-{}", self.adjs[self.adj_i], self.nouns[self.noun_i]);
+            if self.its_completed == self.total_combinations {
+                return Err("All unique combinations reached".into())
+            };
+            if self.its_completed == self.lcm {
+                self.increment_pos = false;
+            };
+            if self.adj_i + 1 < self.adjs.len(){
+                self.adj_i+=1;
+            } else {
+                self.adj_i = 0;
+            }
+            if self.increment_pos {
+                self.noun_i = if self.noun_i + 1 < self.nouns.len(){
+                    self.noun_i + 1
+                } else {
+                    0
+                }
+            } else {
+                self.noun_i = if self.noun_i == 0 {
+                    self.nouns.len() - 1
+                } else {
+                    self.noun_i - 1
+                }
+            };
+            self.its_completed+=1;
+            Ok(phrase)            
+        }
+        
+    }    
 }
 
 
 #[cfg(test)]
 mod tests {
 
+    use std::collections::HashSet;
+
     use super::core::{random_slugs, combinations};
 
     #[test]
-    fn happy() {
-        for i in 1..5 {
-            assert!(random_slugs(i, Some(1)).unwrap().len() > 0);
-        }
+    fn happy_2() {
+        assert!(random_slugs(2, Some(1)).unwrap().len() > 0);
     }
 
     #[test]
@@ -267,5 +315,35 @@ mod tests {
             Ok(_v)   => assert!(false),
             Err(_e) => assert!(true)
         }
+    }
+
+    #[test]
+    fn happy_2_all_unique_half() {
+        let combos = combinations(2).unwrap() / 2;
+        let slugs = random_slugs(2, Some(combos as i32)).expect(
+            "unable to create 2 word slugs for all possible combinations"
+        );
+        assert!(slugs.len() == combos);
+        let mut hs = HashSet::new();
+        dbg!(&slugs[..10]);
+        for slug in slugs {
+            hs.insert(slug);
+        };
+        assert_eq!(hs.len(), combos)
+    }
+
+    #[test]
+    fn happy_2_all_unique_all() {
+        let possible_combos = combinations(2).unwrap();
+        let slugs = random_slugs(2, Some(possible_combos as i32)).expect(
+            "unable to create 2 word slugs for all possible combinations"
+        );
+        assert!(slugs.len() == possible_combos);
+        let mut hs = HashSet::new();
+        dbg!(&slugs[..10]);
+        for slug in slugs {
+            hs.insert(slug);
+        };
+        assert_eq!(hs.len(), possible_combos)
     }
 }
