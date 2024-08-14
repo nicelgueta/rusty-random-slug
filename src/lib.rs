@@ -83,7 +83,7 @@ mod python {
                 // Err(e) => Err(PyValueError::new_err(
                 //     e.to_string()
                 // )),
-                Err(e) => None
+                Err(_e) => None
             }
         }
     }
