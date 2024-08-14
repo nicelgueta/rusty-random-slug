@@ -108,7 +108,7 @@ mod python {
 
 
 mod core {
-    use std::error::Error;
+    use std::{cmp, error::Error};
     use rand::seq::SliceRandom;
 
     // bundle the files into the executable
@@ -162,50 +162,74 @@ mod core {
         };
         Ok(words)
     }
-    fn gcd(a: usize, b: usize) -> usize {
-        if b == 0 {
-            return a;
-        }
-        gcd(b, a % b)
-    }
-    
-    fn lcm(a: usize, b: usize) -> usize {
-        (a * b) / gcd(a, b)
-    }
     
     /// This special class is designed to ensure uniqueness when generating random names.
-    /// 
+    /// It uses a combinatoric algorithm to hold state between calls to .choose()
     struct WordSelector {
         adjs: Vec<String>,
         nouns: Vec<String>,
-        adj_i: usize, 
-        noun_i: usize,
+        selection_ptrs: Vec<Vec<usize>>,
+        selection_i: usize,
         word_len: usize,
-        increment_pos: bool,
-        lcm: usize,
         total_combinations: usize,
-        its_completed: usize
+        its_completed: usize,
     }
     impl WordSelector {
         fn new(adjs: Vec<String>, nouns: Vec<String>, word_len: usize) -> Result<Self, Box<dyn Error>> {
-            let lcm: usize = lcm(adjs.len(), nouns.len());
+            let selection_ptrs = match word_len {
+                1 => Vec::new(),
+                2 => {
+                    let mut ptrs = Vec::with_capacity(adjs.len());
+                    let mut noun_i_ct = 0;
+                    for _ in 0..adjs.len() {
+                        ptrs.push(vec![noun_i_ct]);
+                        noun_i_ct = if noun_i_ct == nouns.len() - 1 {
+                            0
+                        } else {
+                            noun_i_ct + 1
+                        };
+                    };
+                    ptrs
+                },
+                3 => {
+
+                    let mut ptrs = Vec::with_capacity(adjs.len());
+                    let mut noun_i = 0 as usize;
+                    let mut adj_2_i = adjs.len() - 1;
+                    // all adj ptrs go into the hashmap so they can be used when flipped
+                    for i in 0..adjs.len() {
+                        ptrs.push(vec![adj_2_i, noun_i]);
+
+                        noun_i = if noun_i == nouns.len() - 1 {
+                            0
+                        } else {
+                            noun_i + 1
+                        };
+                        adj_2_i = adjs.len() - 1 - i;
+                    };
+                    dbg!(&ptrs);
+                    ptrs
+                }
+                _ => return Err("not yet implemented above 3".into())
+            };
             Ok(Self { 
                 adjs, 
-                nouns, 
-                adj_i: 0, 
-                noun_i: 0, 
+                nouns,
+                selection_ptrs,
                 word_len,
-                increment_pos: true,
-                lcm,
                 total_combinations: combinations(word_len as i32)?,
-                its_completed: 0
+                its_completed: 0,
+                selection_i: 0,
             })
         }
         pub fn choose(&mut self) -> Result<String, Box<dyn Error>>{
+            if self.its_completed == self.total_combinations {
+                return Err("All possible unique combinations have been generated".into())
+            }
             match self.word_len{
-                // 1 => self.choose_1(),
-                2 => self.choose_2(),
-                // 3 => self.choose_3(),
+                1 => Ok(self.choose_1()),
+                2 => Ok(self.choose_2()),
+                3 => Ok(self.choose_3()),
                 // 4 => self.choose_4(),
                 // 5 => self.choose_5(),
                 n => Err(format!(
@@ -213,34 +237,81 @@ mod core {
                 ).into())
             }
         }
-        fn choose_2(&mut self) -> Result<String, Box<dyn Error>> {
-            let phrase = format!("{}-{}", self.adjs[self.adj_i], self.nouns[self.noun_i]);
-            if self.its_completed == self.total_combinations {
-                return Err("All unique combinations reached".into())
-            };
-            if self.its_completed == self.lcm {
-                self.increment_pos = false;
-            };
-            if self.adj_i + 1 < self.adjs.len(){
-                self.adj_i+=1;
+        fn choose_1 (&mut self) -> String {
+            let phrase = self.nouns[self.selection_i].clone();
+            self.selection_i+=1;
+            phrase
+        }
+        /// Function to return a two word slug. The internal selection_map holds pointers
+        /// to the adjective list as keys and a pointer to a noun as the value. For each 
+        /// iteration both pointers are incremented to ensure that each output does not contain
+        /// similar word as the previous output. Pointers are wrapped when they go out of bounds
+        /// to ensure all possible combinations can be generated.
+        fn choose_2(&mut self) -> String {
+            let noun_i = self.selection_ptrs[self.selection_i].last().unwrap().clone();
+            let phrase = format!("{}-{}", self.adjs[self.selection_i], self.nouns[noun_i]);
+            let noun_ptr = self.selection_ptrs
+                .get_mut(self.selection_i)
+                .unwrap()
+                .last_mut()
+                .unwrap();
+
+            *noun_ptr = if noun_i == self.nouns.len() - 1 {
+                // ptr sent back to beginning of the noun array
+                0
             } else {
-                self.adj_i = 0;
-            }
-            if self.increment_pos {
-                self.noun_i = if self.noun_i + 1 < self.nouns.len(){
-                    self.noun_i + 1
-                } else {
-                    0
-                }
+                noun_i + 1
+            };
+
+            self.selection_i = if self.selection_i == self.selection_ptrs.len() - 1 {
+                // reached the end of the adjective list so return to the beginning
+                0
             } else {
-                self.noun_i = if self.noun_i == 0 {
-                    self.nouns.len() - 1
-                } else {
-                    self.noun_i - 1
-                }
+                self.selection_i + 1
             };
             self.its_completed+=1;
-            Ok(phrase)            
+            phrase
+        }
+
+        fn choose_3(&mut self) -> String {
+            let adj_1_i = self.selection_i;
+            let adj_2_i = self.selection_ptrs[self.selection_i][0];
+            let noun_i= self.selection_ptrs[self.selection_i][1];
+            
+            let phrase = format!(
+                "{}-{}-{}", self.adjs[adj_1_i], self.adjs[adj_2_i], self.nouns[noun_i]
+            );
+            
+            let ptr_set = self.selection_ptrs.get_mut(self.selection_i).expect(
+                "Unable to obtain mutable reference to index pointer set"
+            );
+            
+            if noun_i == self.nouns.len() - 1 {
+                // reached end of iteration of nouns so decrement
+                
+                // the second adj_pointer
+                ptr_set[0] = if adj_2_i == 0 {
+                    self.adjs.len() - 1
+                } else {
+                    adj_2_i - 1
+                };
+
+                // reset noun pointer
+                ptr_set[1] = 0
+            } else {
+                ptr_set[1]+=1
+            }
+
+
+
+            self.selection_i = if self.selection_i == self.selection_ptrs.len() - 1 {
+
+                0
+            } else {
+                self.selection_i + 1
+            };
+            self.its_completed+=1;
+            phrase
         }
         
     }    
@@ -345,5 +416,21 @@ mod tests {
             hs.insert(slug);
         };
         assert_eq!(hs.len(), possible_combos)
+    }
+
+    #[test]
+    fn happy_3_all_unique_1_million() {
+        // only generate 10 million to save time because the actual total combinations could be well over half a billion
+        let combos = 1_000_000;
+        let slugs = random_slugs(3, Some(combos as i32)).expect(
+            "unable to create 2 word slugs for all possible combinations"
+        );
+        assert!(slugs.len() == combos);
+        let mut hs = HashSet::new();
+        dbg!(&slugs[..10]);
+        for slug in slugs {
+            hs.insert(slug);
+        };
+        assert_eq!(hs.len(), combos)
     }
 }
