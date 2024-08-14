@@ -11,7 +11,7 @@ Usable as a standalone binary, web applications as a WebAssembly module (WASM), 
 ## Why?
 I needed a way to generate random slugs for a web project so thought it was a good opporunity to try out Rust's WebAssembly capabilities while also being able to use the same code as a zero-dependency python module for other projects.
 
-### Key features
+## Key features
 - No dependencies
 - Fast
 - Customisable slug length in words
