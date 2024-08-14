@@ -53,7 +53,9 @@ mod python {
         #[new]
         fn new(word_length: i32) -> PyResult<Self> {
             if word_length < 1 || word_length > 5 {
-                Err(PyValueError::new_err("word_length must be between 1 and 5"))
+                Err(PyValueError::new_err(
+                    "word_length must be between 1 and 5"
+                ))
             } else {
                 let mut rng = rand::thread_rng();
                 let mut adjs = get_words(ADJ_FILE);
@@ -583,7 +585,7 @@ mod tests {
             Err(_e) => assert!(true),
         }
     }
-
+  
     #[test]
     fn happy_2_all_unique_half() {
         let combos = combinations(2).unwrap() / 2;
