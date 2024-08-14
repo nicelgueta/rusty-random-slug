@@ -12,10 +12,11 @@ Usable as a standalone binary, web applications as a WebAssembly module (WASM), 
 I needed a way to generate random slugs for a web project so thought it was a good opporunity to try out Rust's WebAssembly capabilities while also being able to use the same code as a zero-dependency python module for other projects.
 
 ## Key features
-- No dependencies
-- Fast
+- Generates unique random slugs for a input length in words
+- Blazingly fast
+- Zero dependencies
 - Customisable slug length in words
-- Over half a million unique combinations for 2-word slugs ranging up to over **280 trillion** unique combinations for 5-word slugs
+- Over half a million unique combinations for 2-word slugs ranging up to over **280 trillion** unique combinations for 5-word slugs.
 
 ## Usage
 
@@ -100,8 +101,8 @@ Other features:
     ```
 
 ## Performance
-- 1m x 2 word slugs: ~4.995s
-- 1m x 5 word slugs: ~10.447s
+- 0.5 million x 2 word slugs: ~0.47s
+- 1 million x 5 word slugs: ~1.717s
 
 ## License
 MIT

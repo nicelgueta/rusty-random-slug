@@ -1,10 +1,10 @@
-pub use core::random_slugs;
+pub use core::*;
 
 #[cfg(feature = "wasm")]
 mod wasm {
     use crate::core::{
         random_slugs as _random_slugs,
-        // combinations as _combinations
+        combinations as _combinations
     };
     use wasm_bindgen::prelude::*;
 
@@ -17,13 +17,13 @@ mod wasm {
     }
 
     // TODO: fix the fact integers overflow in wasm
-    // #[wasm_bindgen]
-    // pub fn combinations(word_length: i32) -> Option<i64> {
-    //     match _combinations(word_length) {
-    //         Ok(v) => Some(v as i64),
-    //         Err(_e) => None
-    //     }
-    // }
+    #[wasm_bindgen]
+    pub fn combinations(word_length: i32) -> Option<i64> {
+        match _combinations(word_length) {
+            Ok(v) => Some(v as i64),
+            Err(_e) => None
+        }
+    }
 }
 
 #[cfg(feature = "python")]
@@ -36,6 +36,7 @@ mod python {
         combinations as _combinations, 
         random_slugs as _random_slugs, 
         get_slug as _get_slug,
+        GeneralException,
         WordSelector,
         get_words, 
         ADJ_FILE, 
@@ -89,7 +90,7 @@ mod python {
     fn get_slug(word_length: i32) -> PyResult<String> {
         match _get_slug(word_length) {
             Ok(i) => Ok(i),
-            Err(e) => Err(PyValueError::new_err(e.to_string())),
+            Err(e) => Err(PyValueError::new_err(String::from(e))),
         }
     }
 
@@ -97,14 +98,23 @@ mod python {
     fn combinations(word_length: i32) -> PyResult<usize> {
         match _combinations(word_length) {
             Ok(i) => Ok(i),
-            Err(e) => Err(PyValueError::new_err(e.to_string())),
+            Err(e) => Err(PyValueError::new_err(String::from(e))),
         }
     }
 
     #[pyfunction]
     fn random_slugs(word_length: i32, num_outputs: Option<i32>) -> PyResult<Vec<String>> {
         if 0 < word_length && word_length < 6 {
-            Ok(_random_slugs(word_length, num_outputs).unwrap())
+            match _random_slugs(word_length, num_outputs) {
+                Ok(r) => Ok(r),
+                Err(e) => match e {
+                    GeneralException::NoMoreUniqueCombinations => Err(PyValueError::new_err(format!(
+                        "Requested to generate more slugs than they are unique combinations. Max for {}-word slugs is: {}",
+                        word_length, combinations(word_length).unwrap()
+                    ))),
+                    e => Err(PyValueError::new_err(String::from(e)))
+                }
+            }
         } else {
             Err(PyValueError::new_err(
                 "Number of words must be between 1 an 5",
@@ -124,7 +134,22 @@ mod python {
 
 mod core {
     use rand::seq::SliceRandom;
-    use std::error::Error;
+    
+    #[derive(Debug)]
+    pub enum GeneralException {
+        NoMoreUniqueCombinations,
+        InvalidWordLength(i32),
+        Other(String)
+    }
+    impl From<GeneralException> for String {
+        fn from(error: GeneralException) -> Self {
+            match error {
+                GeneralException::InvalidWordLength(got) => format!("Only slugs of length 1 to 5 are supported. Tried: {}", got),
+                GeneralException::NoMoreUniqueCombinations => "Cannot generate any more unique combinations for this length in words".to_string(),
+                GeneralException::Other(payload) => payload
+            }        
+        }
+    }
 
     // bundle the files into the executable
     pub static NOUN_FILE: &'static [u8] = include_bytes!("./data/nouns.txt");
@@ -133,18 +158,23 @@ mod core {
     pub fn random_slugs(
         word_length: i32,
         num_outputs: Option<i32>,
-    ) -> Result<Vec<String>, Box<dyn Error>> {
+    ) -> Result<Vec<String>, GeneralException> {
         let num_outputs_u = num_outputs.unwrap_or(1);
-        create_phrases(word_length as usize, num_outputs_u)
+        let max_combos = combinations(word_length)?;
+        if num_outputs_u as usize > max_combos {
+            Err(GeneralException::NoMoreUniqueCombinations)
+        } else {
+            create_phrases(word_length as usize, num_outputs_u)
+        }
     }
-    pub fn get_slug(word_length: i32) -> Result<String, Box<dyn Error>> {
+    pub fn get_slug(word_length: i32) -> Result<String, GeneralException> {
         let adjs: Vec<String> = get_words(ADJ_FILE);
         let nouns: Vec<String> = get_words(NOUN_FILE);
         let mut ws = WordSelector::new(adjs, nouns, word_length as usize)?;
         ws.choose()
     }
 
-    pub fn combinations(word_length: i32) -> Result<usize, Box<dyn Error>> {
+    pub fn combinations(word_length: i32) -> Result<usize, GeneralException> {
         let adjs: Vec<String> = get_words(ADJ_FILE);
         let nouns: Vec<String> = get_words(NOUN_FILE);
         match word_length {
@@ -153,7 +183,7 @@ mod core {
             3 => Ok((adjs.len().pow(2)) * nouns.len()),
             4 => Ok((adjs.len().pow(2)) * (nouns.len().pow(2))),
             5 => Ok((adjs.len().pow(3)) * (nouns.len().pow(2))),
-            n => Err(format!("Only slugs of length 1 to 5 are supported. Tried: {}", n).into()),
+            n => Err(GeneralException::InvalidWordLength(n)),
         }
     }
     pub fn get_words(word_file: &[u8]) -> Vec<String> {
@@ -162,7 +192,7 @@ mod core {
         words
     }
 
-    fn create_phrases(word_length: usize, num_outputs: i32) -> Result<Vec<String>, Box<dyn Error>> {
+    fn create_phrases(word_length: usize, num_outputs: i32) -> Result<Vec<String>, GeneralException> {
         let mut rng = rand::thread_rng();
         let mut adjs: Vec<String> = get_words(ADJ_FILE);
         adjs.shuffle(&mut rng);
@@ -192,7 +222,7 @@ mod core {
             adjs: Vec<String>,
             nouns: Vec<String>,
             word_len: usize,
-        ) -> Result<Self, Box<dyn Error>> {
+        ) -> Result<Self, GeneralException> {
             let selection_ptrs = match word_len {
                 1 => Vec::new(),
                 2 => {
@@ -277,7 +307,7 @@ mod core {
                     }
                     ptrs
                 }
-                _ => return Err("not yet implemented above 3".into()),
+                n => return Err(GeneralException::InvalidWordLength(n as i32)),
             };
             Ok(Self {
                 adjs,
@@ -289,9 +319,9 @@ mod core {
                 selection_i: 0,
             })
         }
-        pub fn choose(&mut self) -> Result<String, Box<dyn Error>> {
+        pub fn choose(&mut self) -> Result<String, GeneralException> {
             if self.its_completed == self.total_combinations {
-                return Err("All possible unique combinations have been generated".into());
+                return Err(GeneralException::NoMoreUniqueCombinations);
             }
             match self.word_len {
                 1 => Ok(self.choose_1()),
@@ -299,7 +329,7 @@ mod core {
                 3 => Ok(self.choose_3()),
                 4 => Ok(self.choose_4()),
                 5 => Ok(self.choose_5()),
-                n => Err(format!("Only slugs of length 1 to 5 are supported. Tried: {}", n).into()),
+                n => Err(GeneralException::InvalidWordLength(n as i32)),
             }
         }
         fn choose_1(&mut self) -> String {
