@@ -59,19 +59,19 @@ Other features:
     ```
 
 #### Python Performance
-- 0.5 million x 2 word slugs: **~250ms**
+- 0.5 million x 2 word slugs: **~210ms**
   ```bash
-  time python -c "import rustyrs as r;a = set(s for s in r.SlugGenerator(2));assert len(a) == 556_284"
-  real    0m0.258s
-  user    0m0.234s
-  sys     0m0.020s
+  time python -c "import rustyrs as r;a = set(r.random_slugs(2, 556_284));assert len(a) == 556_284"
+  real    0m0.219s
+  user    0m0.211s
+  sys     0m0.000s
   ```
-- 1 million x 5 word slugs: **~630ms**
+- 1 million x 5 word slugs: **~524ms**
   ```bash
-  time python -c "import rustyrs as r;gen = r.SlugGenerator(5);a = set(next(gen) for _ in range(1_000_000));assert len(a) == 1_000_000"
-  real    0m0.664s
-  user    0m0.631s
-  sys     0m0.030s
+  time python -c "import rustyrs as r;a = set(r.random_slugs(5, 1_000_000));assert len(a) == 1_000_000"
+  real    0m0.667s
+  user    0m0.524s
+  sys     0m0.051s
   ```
 
 __________________
