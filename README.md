@@ -1,6 +1,10 @@
 # Random Slug Generator
 What it says on the tin - this generates random text slugs in Rust. 
 
+**PyPi**
+
+[![Downloads](https://static.pepy.tech/badge/rustyrs)](https://pepy.tech/project/rustyrs)
+
 Usable as a standalone binary, web applications as a WebAssembly module (WASM), or even as a Python module.
 
 - [Python Module](#as-a-python-module)
