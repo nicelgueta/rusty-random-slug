@@ -6,8 +6,9 @@
   </head>
   <body>
     <script type="module" >
-      import init, { random_slugs, combinations } from "./pkg/rustyrs.js";
-      init();
+      import init, { random_slugs, combinations, SlugGenerator } from "./pkg/rustyrs.js";
+      await init();
+      let slug_gen = new SlugGenerator(2);
       export const test = () => {
         const word_length = document.getElementById("word_len_inp").value;
         const n_outputs = document.getElementById("n_outputs").value;
@@ -16,14 +17,6 @@
           return;
         }
         const slugs = random_slugs(word_length, n_outputs);
-
-        // const word_combos = combinations(word_length);
-
-        // const wl = document.getElementById("wl");
-        // wl.textContent = word_length;
-
-        // const wlr = document.getElementById("wlr");
-        // wlr.textContent = word_combos;
 
         const slugsElement = document.getElementById("slugs");
         slugsElement.innerHTML = "";
@@ -39,7 +32,15 @@
           slugsElement.appendChild(li);
         }
       };
+      export const generate = () => {
+        const slug = slug_gen.next();
+        const slugsElement = document.getElementById("slugs");
+        const li = document.createElement("li");
+        li.textContent = slug;
+        slugsElement.appendChild(li);
+      };
       document.getElementById("test").addEventListener("click", test);
+      document.getElementById("gen").addEventListener("click", generate);
     </script>
     <p>Enter length of slug in words (min 1, max 5)</p>
     <input type="number" id="word_len_inp" max="5" min="1" />
@@ -49,7 +50,13 @@
     <br>
     <p>
       <button style="padding-top: 10;" id="test">Go</button>
+      <button style="padding-top: 10;" onclick="location.reload();">Reset</button>
     </p>
+    <br>  
+    <div>
+      <p>OR generate unique slugs one-by-one</p>
+      <button id="gen">Generate</button>
+    </div>
     <ul id="slugs"></ul>
   </body>
 </html>

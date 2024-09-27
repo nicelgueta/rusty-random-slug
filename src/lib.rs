@@ -4,9 +4,14 @@ pub use core::*;
 mod wasm {
     use crate::core::{
         random_slugs as _random_slugs,
-        combinations as _combinations
+        combinations as _combinations,
+        get_words,
+        ADJ_FILE,
+        NOUN_FILE,
+        WordSelector
     };
     use wasm_bindgen::prelude::*;
+    use rand::seq::SliceRandom;
 
     #[wasm_bindgen]
     pub fn random_slugs(word_length: i32, num_outputs: Option<i32>) -> Option<Vec<String>> {
@@ -16,11 +21,53 @@ mod wasm {
         }
     }
 
+    #[wasm_bindgen]
+    pub struct SlugGenerator {
+        generator: WordSelector,
+    }
+
+    #[wasm_bindgen]
+    impl SlugGenerator {
+        #[wasm_bindgen(constructor)]
+        pub fn new(word_length: i32) -> Result<SlugGenerator, JsError> {
+            if word_length < 1 || word_length > 5 {
+                Err(JsError::new(
+                    "word_length must be between 1 and 5"
+                ))
+            } else {
+                let mut rng = rand::thread_rng();
+                let mut adjs = get_words(ADJ_FILE);
+                let mut nouns = get_words(NOUN_FILE);
+                adjs.shuffle(&mut rng);
+                nouns.shuffle(&mut rng);
+                let generator = if let Ok(gen) = WordSelector::new(
+                    adjs, nouns,
+                    word_length as usize
+                ) {
+                    gen
+                } else {
+                    return Err(JsError::new("Failure creating WordSelector object"))
+                };
+                Ok(Self {generator})
+            }
+        }
+
+        // Calls the next item in the generator. Returns None when no more unique 
+        // slugs can be generated
+        pub fn next(&mut self) -> Option<String> {
+            if let Ok(slug) = self.generator.choose() {
+                Some(slug)
+            } else {
+                None
+            }
+        }
+    }
+
     // TODO: fix the fact integers overflow in wasm
     #[wasm_bindgen]
-    pub fn combinations(word_length: i32) -> Option<i64> {
+    pub fn combinations(word_length: i32) -> Option<u64> {
         match _combinations(word_length) {
-            Ok(v) => Some(v as i64),
+            Ok(v) => Some(v as u64),
             Err(_e) => None
         }
     }
