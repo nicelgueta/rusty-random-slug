@@ -52,7 +52,7 @@ mod wasm {
             }
         }
 
-        // Calls the next item in the generator. Returns None when no more unique 
+        // Calls the next item in the generator. Returns None when no more unique
         // slugs can be generated
         pub fn next(&mut self) -> Option<String> {
             if let Ok(slug) = self.generator.choose() {
@@ -80,13 +80,13 @@ mod python {
     use rand::seq::SliceRandom;
 
     use crate::core::{
-        combinations as _combinations, 
-        random_slugs as _random_slugs, 
+        combinations as _combinations,
+        random_slugs as _random_slugs,
         get_slug as _get_slug,
         GeneralException,
         WordSelector,
-        get_words, 
-        ADJ_FILE, 
+        get_words,
+        ADJ_FILE,
         NOUN_FILE
     };
 
@@ -183,7 +183,7 @@ mod python {
 
 mod core {
     use rand::seq::SliceRandom;
-    
+
     #[derive(Debug)]
     pub enum GeneralException {
         NoMoreUniqueCombinations,
@@ -196,7 +196,7 @@ mod core {
                 GeneralException::InvalidWordLength(got) => format!("Only slugs of length 1 to 5 are supported. Tried: {}", got),
                 GeneralException::NoMoreUniqueCombinations => "Cannot generate any more unique combinations for this length in words".to_string(),
                 GeneralException::Other(payload) => payload
-            }        
+            }
         }
     }
 
@@ -217,8 +217,11 @@ mod core {
         }
     }
     pub fn get_slug(word_length: i32) -> Result<String, GeneralException> {
-        let adjs: Vec<String> = get_words(ADJ_FILE);
-        let nouns: Vec<String> = get_words(NOUN_FILE);
+        let mut adjs: Vec<String> = get_words(ADJ_FILE);
+        let mut nouns: Vec<String> = get_words(NOUN_FILE);
+        let mut rng = rand::thread_rng();
+        adjs.shuffle(&mut rng);
+        nouns.shuffle(&mut rng);
         let mut ws = WordSelector::new(adjs, nouns, word_length as usize)?;
         ws.choose()
     }
@@ -568,6 +571,8 @@ mod tests {
 
     use std::collections::HashSet;
 
+    use crate::get_slug;
+
     use super::core::{combinations, random_slugs};
 
     #[test]
@@ -632,7 +637,7 @@ mod tests {
             Err(_e) => assert!(true),
         }
     }
-  
+
     #[test]
     fn happy_2_all_unique_half() {
         let combos = combinations(2).unwrap() / 2;
@@ -703,5 +708,12 @@ mod tests {
             hs.insert(slug);
         }
         assert_eq!(hs.len(), combos)
+    }
+
+    #[test]
+    fn test_get_slug_different_slug(){
+        // check that the get_slug function does not return the
+        // same slug twice
+        assert_ne!(get_slug(2).unwrap(), get_slug(2).unwrap())
     }
 }
