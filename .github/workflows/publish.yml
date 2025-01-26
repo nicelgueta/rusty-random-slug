@@ -11,6 +11,7 @@ on:
       - src/*
       - Cargo.toml
       - Cargo.lock
+      - .github/workflows/publish.yml
 env:
   CARGO_TERM_COLOR: always
 
@@ -25,6 +26,4 @@ jobs:
       - run: cargo test --verbose
       - run: cargo login ${{ secrets.CRATES_IO_API_TOKEN }}
       - run:
-          cargo publish --features cli \
-            --no-confirm \
-            --no-verify \
+          cargo publish --features cli
