@@ -25,6 +25,6 @@ jobs:
       - run: cargo test --verbose
       - run: cargo login ${{ secrets.CRATES_IO_API_TOKEN }}
       - run:
-          cargo publish --F cli \
+          cargo publish --features cli \
             --no-confirm \
             --no-verify \

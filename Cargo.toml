@@ -1,6 +1,6 @@
 [package]
 name = "rustyrs"
-version = "0.5.2"
+version = "0.5.3"
 edition = "2021"
 authors = ["nicelgueta"]
 description = "Generates unique slugs for various uses"
@@ -28,5 +28,5 @@ cli = ["clap"]
 rand = "0.8.5"
 wasm-bindgen = {version = "0.2.92", optional = true}
 getrandom = { version = "0.2", features = ["js"], optional = true }
-pyo3 = { version = "0.21.1", features = ["extension-module"], optional = true }
+pyo3 = { version = "0.22.5", features = ["extension-module"], optional = true }
 clap = { version = "4.5.27", optional = true, features = ["derive"] }
