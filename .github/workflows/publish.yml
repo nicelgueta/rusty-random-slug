@@ -23,4 +23,5 @@ jobs:
       - run: rustup update ${{ matrix.toolchain }} && rustup default ${{ matrix.toolchain }}
       - run: cargo build --verbose
       - run: cargo test --verbose
-      - run: cargo publish
+      - run: cargo login ${{ secrets.CRATES_IO_API_TOKEN }}
+      - run: cargo publish --all-features
