@@ -1,8 +1,13 @@
 [package]
 name = "rustyrs"
-version = "0.5.1"
+version = "0.5.2"
 edition = "2021"
-
+authors = ["nicelgueta"]
+description = "Generates unique slugs for various uses"
+readme = "README.md"
+repository = "https://github.com/nicelgueta/rusty-random-slug"
+license = "MIT"
+keywords = ["random", "slug", "python", "wasm"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [lib]
@@ -10,13 +15,18 @@ name = "rustyrs"
 path = "src/lib.rs"
 crate-type = ["cdylib", "lib"]
 
+[[bin]]
+name = "rustyrs"
+required-features = ["cli"]
 
 [features]
 wasm = ["wasm-bindgen", "getrandom"]
 python = ["pyo3"]
+cli = ["clap"]
 
 [dependencies]
 rand = "0.8.5"
 wasm-bindgen = {version = "0.2.92", optional = true}
 getrandom = { version = "0.2", features = ["js"], optional = true }
 pyo3 = { version = "0.21.1", features = ["extension-module"], optional = true }
+clap = { version = "4.5.27", optional = true, features = ["derive"] }

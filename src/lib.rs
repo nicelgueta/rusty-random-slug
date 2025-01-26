@@ -184,7 +184,7 @@ mod python {
 mod core {
     use rand::seq::SliceRandom;
 
-    #[derive(Debug)]
+    #[derive(Debug, Clone)]
     pub enum GeneralException {
         NoMoreUniqueCombinations,
         InvalidWordLength(i32),
