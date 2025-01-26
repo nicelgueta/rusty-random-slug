@@ -16,7 +16,6 @@ on:
       - rustyrs.pyi
       - Cargo.toml
       - Cargo.lock
-      - .github/workflows/*
 
 permissions:
   contents: read
