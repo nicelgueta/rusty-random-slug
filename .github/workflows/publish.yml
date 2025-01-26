@@ -21,7 +21,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: rustup update ${{ matrix.toolchain }} && rustup default ${{ matrix.toolchain }}
-      - run: cargo build --verbose
+      - run: cargo build --verbose --release
       - run: cargo test --verbose
       - run: cargo login ${{ secrets.CRATES_IO_API_TOKEN }}
-      - run: cargo publish --all-features
+      - run:
+          cargo publish --F cli \
+            --no-confirm \
+            --no-verify \
