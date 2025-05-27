@@ -1,5 +1,5 @@
 # Random Slug Generator
-What it says on the tin - this generates random text slugs in Rust. 
+What it says on the tin - this generates random text slugs in Rust.
 
 **PyPi**
 
@@ -32,6 +32,8 @@ I needed a way to generate random slugs for a web project so thought it was a go
 pip install rustyrs
 ```
 
+OR
+
 #### Build from source
 ```bash
 python -m venv venv
@@ -61,6 +63,14 @@ Other features:
     from rustyrs import combinations
     print(combinations(2)) # 556,284
     ```
+- `EternalSlugGenerator(word_length: int)`: Create iteration suffixed slugs forever. Guaranteed uniqueness.
+  ```python
+    from rustyrs import EternalSlugGenerator, combinations
+    gen = EternalSlugGenerator(2)
+    first = [next(gen) for _ in range(combinations(2))] # max no of combinations iterated
+    first[-1] # 'listening-tench-0'
+    next(gen) # 'existent-walrus-1'
+  ```
 
 #### Python Performance
 - 0.5 million x 2 word slugs: **~210ms**
@@ -83,7 +93,7 @@ __________________
 ### As a WASM module
 ```bash
 # If wasm pack is not already installed
-cargo install wasm-pack 
+cargo install wasm-pack
 
 # build the WASM module
 wasm-pack build --target web --features wasm

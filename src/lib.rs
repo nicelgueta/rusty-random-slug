@@ -85,6 +85,7 @@ mod python {
         get_slug as _get_slug,
         GeneralException,
         WordSelector,
+        EternalSlugGenerator as _EternalSlugGenerator,
         get_words,
         ADJ_FILE,
         NOUN_FILE
@@ -135,6 +136,31 @@ mod python {
         }
     }
 
+    #[pyclass]
+    pub struct EternalSlugGenerator {
+        generator: _EternalSlugGenerator
+    }
+
+    #[pymethods]
+    impl EternalSlugGenerator {
+        #[new]
+        fn new(word_length: i32) -> PyResult<Self> {
+            let gen_res = _EternalSlugGenerator::new(word_length);
+            match gen_res {
+                Ok(generator) => Ok(Self { generator }),
+                Err(_e) => Err(PyRuntimeError::new_err("Failure creating generator object"))
+            }
+
+        }
+        fn __iter__(slf: PyRef<'_, Self>) -> PyRef<'_, Self> {
+            slf
+        }
+
+        fn __next__(mut slf: PyRefMut<'_, Self>) -> String {
+            slf.generator.next()
+        }
+    }
+
     #[pyfunction]
     fn get_slug(word_length: i32) -> PyResult<String> {
         match _get_slug(word_length) {
@@ -177,6 +203,7 @@ mod python {
         m.add_function(wrap_pyfunction!(get_slug, m)?)?;
         m.add_function(wrap_pyfunction!(combinations, m)?)?;
         m.add_class::<SlugGenerator>()?;
+        m.add_class::<EternalSlugGenerator>()?;
         Ok(())
     }
 }
@@ -203,6 +230,54 @@ mod core {
     // bundle the files into the executable
     pub static NOUN_FILE: &'static [u8] = include_bytes!("./data/nouns.txt");
     pub static ADJ_FILE: &'static [u8] = include_bytes!("./data/adjs.txt");
+
+    /// A slug generator generator that will generate slugs forever. Each slug is suffixed with its iteration number.
+    /// After iteration through all possible unique combinations the suffix number is incremented and the generator starts
+    /// from the beginning. Use cases are for when a smaller slug is required but uniqueness needs to be guaranteed over a longer
+    /// period of time.
+    /// If the length of the slug is not important then a 4 or 5 word slug generator should be more than satisfactory from a uniqueness
+    /// perspective given they could be trillions of unique combinations.
+    pub struct EternalSlugGenerator {
+        generator: WordSelector,
+        its_completed: usize
+    }
+
+    impl EternalSlugGenerator {
+
+        pub fn new(word_length: i32) -> Result<Self, GeneralException> {
+            match Self::get_word_selector(word_length) {
+                Ok(generator) => Ok(EternalSlugGenerator{ generator, its_completed: 0 }),
+                Err(e) => Err(e)
+            }
+        }
+        fn get_word_selector(word_length: i32) -> Result<WordSelector, GeneralException> {
+            if word_length < 1 || word_length > 5 {
+                Err(GeneralException::InvalidWordLength(word_length))
+            } else {
+                let mut rng = rand::thread_rng();
+                let mut adjs = get_words(ADJ_FILE);
+                let mut nouns = get_words(NOUN_FILE);
+                adjs.shuffle(&mut rng);
+                nouns.shuffle(&mut rng);
+                match WordSelector::new(
+                    adjs, nouns,
+                    word_length as usize
+                ) {
+                    Ok(generator) => Ok(generator),
+                    Err(e) => Err(e)
+                }
+            }
+        }
+        pub fn next(&mut self) -> String {
+            if let Ok(slug) = self.generator.choose() {
+                format!("{}-{}", slug, self.its_completed)
+            } else {
+                self.its_completed += 1;
+                self.generator = Self::get_word_selector(self.generator.get_word_len() as i32).unwrap();
+                self.next()
+            }
+        }
+    }
 
     pub fn random_slugs(
         word_length: i32,
@@ -387,6 +462,7 @@ mod core {
         fn choose_1(&mut self) -> String {
             let phrase = self.nouns[self.selection_i].clone();
             self.selection_i += 1;
+            self.its_completed += 1;
             phrase
         }
         /// Function to return a two word slug. The internal selection_map holds pointers
@@ -563,6 +639,10 @@ mod core {
             self.its_completed += 1;
             phrase
         }
+
+        pub fn get_word_len(&self) -> usize {
+            self.word_len
+        }
     }
 }
 
@@ -571,7 +651,7 @@ mod tests {
 
     use std::collections::HashSet;
 
-    use crate::get_slug;
+    use crate::{get_slug, EternalSlugGenerator};
 
     use super::core::{combinations, random_slugs};
 
@@ -715,5 +795,17 @@ mod tests {
         // check that the get_slug function does not return the
         // same slug twice
         assert_ne!(get_slug(2).unwrap(), get_slug(2).unwrap())
+    }
+
+    #[test]
+    fn test_eternal_slug_gen(){
+        let mut slug_gen = EternalSlugGenerator::new(1).unwrap();
+        let max_its = combinations(1).unwrap();
+        for _i in 0..max_its {
+            let slug = slug_gen.next();
+            assert_eq!(slug.chars().nth(slug.len() - 1).unwrap(), '0');
+        }
+        let next_slug = slug_gen.next();
+        assert_eq!(next_slug.chars().nth(next_slug.len() - 1).unwrap(), '1');
     }
 }

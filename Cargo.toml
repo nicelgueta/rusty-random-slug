@@ -1,6 +1,6 @@
 [package]
 name = "rustyrs"
-version = "0.5.3"
+version = "0.5.4"
 edition = "2021"
 authors = ["nicelgueta"]
 description = "Generates unique slugs for various uses"
